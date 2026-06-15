@@ -1,0 +1,7 @@
+{% if scan_state.is_scanning %}
+<span class="text-blue-600 text-sm animate-pulse">⟳ Scanning{{ (' ' + scan_state.scan_root) if scan_state.scan_root else '' }}…</span>
+{% elif scan_state.last_scan_at %}
+<span class="text-gray-500 text-sm">Last scan: {{ scan_state.last_scan_at }}</span>
+{% else %}
+<span class="text-gray-400 text-sm">No scan yet</span>
+{% endif %}

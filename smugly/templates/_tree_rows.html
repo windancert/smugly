@@ -1,0 +1,79 @@
+{% for row in rows %}
+{% set indent = (row.depth - 1) * 20 %}
+<tr id="row-{{ row.path | replace('/', '-') }}"
+    class="border-b hover:bg-gray-50 text-sm"
+    {% if row.has_children %}
+    hx-get="/tree/children?path={{ row.path }}"
+    hx-trigger="click once"
+    hx-target="#children-{{ row.path | replace('/', '-') }}"
+    hx-swap="innerHTML"
+    {% endif %}>
+
+  <!-- Local side -->
+  <td class="py-2 pr-4 w-1/2" style="padding-left: {{ indent + 12 }}px">
+    <span class="inline-flex items-center gap-1">
+      {% if row.has_children %}
+        <span class="text-gray-400 cursor-pointer select-none">▶</span>
+      {% else %}
+        <span class="w-4"></span>
+      {% endif %}
+      {% if row.is_gallery %}
+        <span title="Gallery">📁</span>
+      {% else %}
+        <span title="Folder">📂</span>
+      {% endif %}
+      <span class="font-mono">{{ row.name }}</span>
+      {% if row.local_exists %}
+        <span class="px-1.5 py-0.5 rounded text-xs font-medium status-{{ row.status }}">
+          {% if row.status == 'in_sync' %}✓ in sync
+          {% elif row.status == 'local_only' %}↑ local only
+          {% elif row.status == 'remote_only' %}↓ remote only
+          {% elif row.status == 'conflict' %}⚡ conflict
+          {% elif row.status == 'structure_error' %}⚠ error
+          {% else %}{{ row.status }}{% endif %}
+        </span>
+      {% else %}
+        <span class="text-gray-300 text-xs italic">not local</span>
+      {% endif %}
+    </span>
+  </td>
+
+  <!-- Remote side -->
+  <td class="py-2 pl-4 border-l w-1/2" style="padding-left: {{ indent + 12 + 4 }}px">
+    {% if row.remote_exists %}
+      <span class="inline-flex items-center gap-1">
+        {% if row.is_gallery %}
+          <span title="Gallery">📁</span>
+        {% else %}
+          <span title="Folder">📂</span>
+        {% endif %}
+        <span class="font-mono text-gray-600">{{ row.name }}</span>
+        <span class="px-1.5 py-0.5 rounded text-xs font-medium status-{{ row.status }}">
+          {% if row.status == 'in_sync' %}✓ in sync
+          {% elif row.status == 'local_only' %}missing
+          {% elif row.status == 'remote_only' %}↓ remote only
+          {% elif row.status == 'conflict' %}⚡ conflict
+          {% elif row.status == 'structure_error' %}⚠ error
+          {% else %}{{ row.status }}{% endif %}
+        </span>
+      </span>
+    {% else %}
+      <span class="text-gray-300 text-xs italic">not on SmugMug</span>
+    {% endif %}
+  </td>
+
+  <!-- Scoped scan button -->
+  <td class="py-2 pl-2 text-right whitespace-nowrap">
+    <button
+      hx-post="/scan?subpath={{ row.path }}"
+      hx-target="#scan-feedback"
+      hx-swap="innerHTML"
+      class="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100"
+      title="Scan {{ row.path }}">
+      Scan
+    </button>
+  </td>
+</tr>
+<!-- children placeholder -->
+<tr id="children-{{ row.path | replace('/', '-') }}"><td colspan="3"></td></tr>
+{% endfor %}

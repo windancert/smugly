@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Queue – Smugly{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-4">
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-semibold">Action Queue</h1>
+    <div id="worker-controls" class="flex items-center gap-1 text-sm">
+      {% if worker_status == 'running' %}
+        <span class="text-green-600 font-medium">Running</span>
+        <button hx-post="/queue/worker/pause" hx-target="#worker-controls" hx-swap="outerHTML"
+          class="ml-2 px-2 py-1 text-xs bg-yellow-100 rounded">Pause</button>
+        <button hx-post="/queue/worker/stop" hx-target="#worker-controls" hx-swap="outerHTML"
+          class="ml-1 px-2 py-1 text-xs bg-red-100 rounded">Stop</button>
+      {% elif worker_status == 'paused' %}
+        <span class="text-yellow-600 font-medium">Paused</span>
+        <button hx-post="/queue/worker/resume" hx-target="#worker-controls" hx-swap="outerHTML"
+          class="ml-2 px-2 py-1 text-xs bg-green-100 rounded">Resume</button>
+        <button hx-post="/queue/worker/stop" hx-target="#worker-controls" hx-swap="outerHTML"
+          class="ml-1 px-2 py-1 text-xs bg-red-100 rounded">Stop</button>
+      {% else %}
+        <span class="text-gray-500 font-medium">Stopped</span>
+        <button hx-post="/queue/worker/resume" hx-target="#worker-controls" hx-swap="outerHTML"
+          class="ml-2 px-2 py-1 text-xs bg-green-100 rounded">Start</button>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if items %}
+  <div class="bg-white rounded-lg border overflow-hidden">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+          <th class="py-2 px-3 text-left">Action</th>
+          <th class="py-2 px-3 text-left">Path</th>
+          <th class="py-2 px-3 text-left">Queued</th>
+          <th class="py-2 px-3 w-16"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr id="q-{{ item.id }}" class="border-b hover:bg-gray-50">
+          <td class="py-2 px-3">
+            <span class="px-2 py-0.5 rounded text-xs font-medium
+              {% if item.action == 'upload' %}bg-blue-100 text-blue-700
+              {% elif item.action == 'download' %}bg-orange-100 text-orange-700
+              {% elif item.action == 'quarantine' %}bg-gray-100 text-gray-600
+              {% elif item.action == 'flag_conflict' %}bg-red-100 text-red-700
+              {% elif item.action in ('rename_local', 'rename_remote') %}bg-purple-100 text-purple-700
+              {% else %}bg-gray-100 text-gray-600{% endif %}">
+              {{ item.action }}
+            </span>
+          </td>
+          <td class="py-2 px-3 font-mono text-xs text-gray-700 max-w-xs truncate">
+            {{ item.local_path or '—' }}
+          </td>
+          <td class="py-2 px-3 text-gray-400 text-xs">{{ item.created_at }}</td>
+          <td class="py-2 px-3 text-right">
+            <button
+              hx-delete="/queue/{{ item.id }}"
+              hx-target="#q-{{ item.id }}"
+              hx-swap="outerHTML"
+              hx-confirm="Cancel this action?"
+              class="text-xs text-red-400 hover:text-red-600">✕</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="bg-white rounded-lg border py-12 text-center text-gray-400 text-sm">
+    Queue is empty. Run a scan from the
+    <a href="/tree" class="text-blue-500 hover:underline">tree view</a> to populate it.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

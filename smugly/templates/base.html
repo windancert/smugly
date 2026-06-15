@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Smugly{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <style>
+    .status-in_sync     { @apply text-green-700 bg-green-50; }
+    .status-local_only  { @apply text-blue-700 bg-blue-50; }
+    .status-remote_only { @apply text-orange-700 bg-orange-50; }
+    .status-conflict    { @apply text-red-700 bg-red-50; }
+    .status-structure_error { @apply text-amber-700 bg-amber-50; }
+    .status-quarantined { @apply text-gray-500 bg-gray-50; }
+    .status-unknown     { @apply text-gray-400; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen">
+  <nav class="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-6">
+    <a href="/" class="font-semibold text-lg tracking-tight">Smugly</a>
+    <a href="/tree" class="text-sm hover:text-blue-600 {% if request.url.path == '/tree' %}text-blue-600 font-medium{% endif %}">Tree</a>
+    <a href="/queue" class="text-sm hover:text-blue-600 {% if request.url.path == '/queue' %}text-blue-600 font-medium{% endif %}">Queue</a>
+    <a href="/settings" class="text-sm hover:text-blue-600 ml-auto {% if request.url.path == '/settings' %}text-blue-600 font-medium{% endif %}">Settings</a>
+  </nav>
+  <main class="p-6">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

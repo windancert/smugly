@@ -1,0 +1,14 @@
+services:
+  smugly:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ${PHOTO_DIR:-/nas/photos}:/photos
+      - smugly_config:/config
+    env_file:
+      - .env
+    restart: unless-stopped
+
+volumes:
+  smugly_config:

@@ -1,0 +1,7 @@
+<span class="text-sm text-gray-600">
+  Worker: <strong
+    class="{% if worker_status == 'running' %}text-green-600{% elif worker_status == 'paused' %}text-yellow-600{% else %}text-gray-500{% endif %}">
+    {{ worker_status }}
+  </strong>
+  &nbsp;·&nbsp; {{ total }} pending
+</span>
