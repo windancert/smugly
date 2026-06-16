@@ -76,5 +76,9 @@ def init_db(db_path: Path) -> None:
             scan_root    TEXT
         );
         INSERT OR IGNORE INTO scan_state (id, is_scanning) VALUES (1, 0);
+
+        CREATE TABLE IF NOT EXISTS local_dirs (
+            path TEXT PRIMARY KEY
+        );
     """)
     conn.commit()

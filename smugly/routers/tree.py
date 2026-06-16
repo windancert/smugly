@@ -1,4 +1,5 @@
 import threading
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Request
@@ -55,10 +56,13 @@ def _build_tree_rows(db_path: Path, parent: str = "") -> list[dict]:
     for path in dir_statuses:
         all_dirs.add(path)
 
-    # Walk the local filesystem to get directories
+    # Use the snapshot written by the scanner; fall back to os.walk before first scan
     photo_dir = config.settings.photo_dir
     local_dirs: set[str] = set()
-    if photo_dir.exists():
+    for row in conn.execute("SELECT path FROM local_dirs"):
+        local_dirs.add(row["path"])
+
+    if not local_dirs and photo_dir.exists():
         for dirpath, dirnames, _ in __import__("os").walk(photo_dir):
             abs_dir = Path(dirpath)
             rel = abs_dir.relative_to(photo_dir).as_posix()
@@ -169,6 +173,7 @@ async def trigger_scan(background_tasks: BackgroundTasks, subpath: str = ""):
     return HTMLResponse(
         '<div class="text-sm text-blue-600">Scan started…</div>',
         status_code=202,
+        headers={"HX-Trigger": "treeRefresh"},
     )
 
 
@@ -181,10 +186,18 @@ async def scan_status(request: Request):
     conn = get_conn(db_path)
     row = conn.execute("SELECT * FROM scan_state WHERE id=1").fetchone()
     state = dict(row) if row else {}
+
+    is_scanning = bool(state.get("is_scanning"))
+    recently_done = False
+    if not is_scanning and state.get("last_scan_at"):
+        t = datetime.fromisoformat(state["last_scan_at"]).replace(tzinfo=timezone.utc)
+        recently_done = (datetime.now(timezone.utc) - t) < timedelta(seconds=5)
+    headers = {"HX-Trigger": "treeRefresh"} if (is_scanning or recently_done) else {}
+
     return templates.TemplateResponse("_scan_status.html", {
         "request": request,
         "scan_state": state,
-    })
+    }, headers=headers)
 
 
 def _run_scan(subpath: str) -> None:

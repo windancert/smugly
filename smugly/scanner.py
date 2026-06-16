@@ -43,8 +43,11 @@ class Scanner:
         conn.commit()
         try:
             local_tree = self._walk_local(subpath)
+            self._upsert_local_dirs(local_tree, conn, subpath)
             smugmug_albums = self._refresh_smugmug_cache(subpath) if self.client else {}
             summary = self._diff(local_tree, smugmug_albums, subpath)
+            if not subpath:
+                self._prune_local_dirs(local_tree, conn)
             conn.execute(
                 "UPDATE scan_state SET is_scanning=0, last_scan_at=datetime('now') WHERE id=1"
             )
@@ -54,6 +57,28 @@ class Scanner:
             conn.execute("UPDATE scan_state SET is_scanning=0 WHERE id=1")
             conn.commit()
             raise
+
+    # ── local dir snapshot ───────────────────────────────────────────────────
+
+    def _upsert_local_dirs(self, local_tree: dict, conn, subpath: str) -> None:
+        """Write discovered directory paths to local_dirs and commit immediately."""
+        for path in local_tree:
+            if path == "":
+                continue
+            if subpath and not (path == subpath or path.startswith(subpath + "/")):
+                continue
+            conn.execute("INSERT OR REPLACE INTO local_dirs (path) VALUES (?)", (path,))
+        conn.commit()
+
+    def _prune_local_dirs(self, local_tree: dict, conn) -> None:
+        """Remove local_dirs entries not seen in this full scan."""
+        seen = [p for p in local_tree if p]
+        if seen:
+            placeholders = ",".join("?" * len(seen))
+            conn.execute(f"DELETE FROM local_dirs WHERE path NOT IN ({placeholders})", seen)
+        else:
+            conn.execute("DELETE FROM local_dirs")
+        conn.commit()
 
     # ── local walk ───────────────────────────────────────────────────────────
 
@@ -213,6 +238,8 @@ class Scanner:
                 )
                 self._enqueue(conn, "download", remote_rel, img.get("ImageKey"), album_key)
                 summary["download"] += 1
+
+            conn.commit()
 
         # previously tracked files not found this scan → potential local deletion
         for path, info in existing.items():
