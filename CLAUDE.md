@@ -1,5 +1,25 @@
 # Project: SmugMug ↔ Local Folder Two-Way Sync Tool (with Web UI)
 
+## Development setup
+
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) (no Python required first):
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Run the app locally (uv downloads Python 3.12 automatically on first run):
+```powershell
+$env:SMUGLY_PHOTO_DIR="C:\path\to\photos"; $env:SMUGLY_CONFIG_DIR="C:\path\to\config"; uv run uvicorn smugly.main:app --reload
+```
+
+Run via Docker (matches production):
+```powershell
+copy .env.example .env   # fill in API keys
+$env:PHOTO_DIR="C:\path\to\photos"; docker compose up --build
+```
+
+Dependencies are declared in `pyproject.toml`. `requirements.txt` mirrors them for Docker.
+
 ## Goal
 A Python web application, packaged as a Docker container, that runs on my
 NAS and keeps a local directory of photos in two-way sync with a SmugMug
